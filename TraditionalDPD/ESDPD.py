@@ -9,19 +9,20 @@ import matplotlib.pyplot as plt
 import time
 import numpy as np
 from DPDFunction import MLDPD, MVDRDPD
+from TraditionalDPD.CRLB import CRLB
 
 if __name__ == "__main__":
     # 用于确定数据文件位置
     SnrRange = [-5, -5]
-    dataFileRoot = r"E:\资料\研究生\课题\射频定位\code\Dataset\test\SNR" + str(SnrRange)
+    dataFileRoot = r"E:\资料\研究生\课题\射频定位\code\SignalDataset\SNR" + str(SnrRange)
 
     errorUnit = '1e6m'
-    dataLength = 256
+    dataLength = 128
 
     # 接收机个数
-    receiverNum = 4
+    receiverNum = 3
     # 发射机个数
-    emitterNum = 3
+    emitterNum = 1
 
     dataSet = DataSetCsv1(root_path=dataFileRoot + "/valid", receiverNum=receiverNum,
                           emitterNum=emitterNum, transform=None,
@@ -34,9 +35,10 @@ if __name__ == "__main__":
     delta = 10000/2
     delta *= 2
     testErrors = []
+    CRLBs = []
     useTime = 0
     allUseTime = 0
-    for num in range(dataSet.getDataNum()):
+    for num in range(dataSet.getDataNum() // 5):
 
         data, label = dataSet.getData(num, True)
         data1, data2 = data[0], data[1]
@@ -57,8 +59,10 @@ if __name__ == "__main__":
             receiverPos[i] = data2[i * 6:i * 6 + 3]
             receiverVel[i] = data2[(i + 1) * 6 - 3:(i + 1) * 6]
 
-        receiveSignal = data1
+        receivedSignal = data1
         emitterSignal = None
+        emitterSignal = np.expand_dims(np.squeeze(
+            dataSet.dataset.GetEmitSignalIQData(1, (dataSet.dataset.receiverNum, dataSet.time_scale, 1), [num], dataSet.isNormal))[0], 0)
 
 
         # 去除零值
@@ -76,7 +80,7 @@ if __name__ == "__main__":
 
         receiverPos = clearZero(receiverPos)
         receiverVel = clearZero(receiverVel)
-        receiveSignal = clearZero(receiveSignal)
+        receivedSignal = clearZero(receivedSignal)
         receiverNumReal = receiverPos.shape[0]
 
         if emitterNumReal == 0 or receiverNumReal < 3:
@@ -104,14 +108,15 @@ if __name__ == "__main__":
         loss = np.zeros([int(calRange / delta + 1), int(calRange / delta + 1)])
         for i in range(loss.shape[1]):
             for j in range(loss.shape[0]):
-                if i == 16 and j == 28:
-                    aa=0
                 p = np.zeros([1, 3])
                 p[0, 0] = i * delta
                 p[0, 1] = j * delta
                 loss[j, i] = MLDPD(fc, samplingRate, p, emitterVel[0], receiverPos[locationReceiverNum],
-                                         receiverVel[locationReceiverNum], receiveSignal[locationReceiverNum], emitterSignal=None)
+                                   receiverVel[locationReceiverNum], receivedSignal[locationReceiverNum], emitterSignal=None)
 
+        crlb = CRLB(emitterPos, emitterVel, emitterSignal, receiverPos, receiverVel, receivedSignal,
+                    SnrRange[0], fc, samplingRate, np.ones(receiverPos.shape[0]))
+        CRLBs.append(crlb)
 
         # sample = np.zeros([loss.size, 3])
         # for i in range(loss.shape[0]):
@@ -213,7 +218,7 @@ if __name__ == "__main__":
 
         error = np.sqrt(np.sum(np.square(predict - emitterPos), 1)) / float(errorUnit[:-1])
         useTime = time.time() - startTime
-        print('num:{}/{},time:{},receiverNum:{},error({}):{}'.format(num + 1, dataSet.getDataNum(), useTime, receiverNumReal, errorUnit, error))
+        print('num:{}/{},time:{},receiverNum:{},error({}):{},crlb({}):{}'.format(num + 1, dataSet.getDataNum(), useTime, receiverNumReal, errorUnit, error, errorUnit, crlb / float(errorUnit[:-1])))
         # for e in error:
         #     testErrors.append(e)
         testErrors.append(error.mean())
@@ -229,7 +234,7 @@ if __name__ == "__main__":
             # 绘图
             plt.figure(figsize=(4/1.25, 3/1.25))
             for i in range(receiverNumReal):
-                plt.plot(abs(receiveSignal[i]), label='receiver{}'.format(i + 1))
+                plt.plot(abs(receivedSignal[i]), label='receiver{}'.format(i + 1))
             plt.legend()
 
             plt.figure(figsize=(4/1.25, 3/1.25))
@@ -299,11 +304,12 @@ if __name__ == "__main__":
     print('SNR:', SnrRange)
     print('average time:', allUseTime / dataSet.getDataNum())
     testErrors = np.array(testErrors)
+    CRLBs = np.array(CRLBs)
     colors1 = '#00CED1'  # 点的颜色
     area = np.pi * 4 ** 2  # 点面积
     plt.figure(figsize=(4/1.25, 3/1.25))
     plt.scatter(range(testErrors.shape[0]), testErrors, s=area, c=colors1, alpha=0.4)
-    print('Average RMSE({}):{}'.format(errorUnit, testErrors.mean()))
+    print('Average RMSE({}):{}, CRLB({}):{}'.format(errorUnit, testErrors.mean(), errorUnit, CRLBs.mean() / float(errorUnit[:-1])))
     #plt.title('Average RMSE({}):{}'.format(errorUnit, testErrors.mean()))
     plt.ylim([1e-4, 1.5])
     plt.xlabel('sample number')
@@ -316,5 +322,6 @@ if __name__ == "__main__":
     # path = r"E:\资料\研究生\课题\射频定位\code\DeepPL\CompareExperRes" + "/" + errorUnit + '/SNR' + str(SnrRange)
     # DataIO.MakeDir(path)
     # path = path + '/' + '(time{})ESDPD average error({})'.format(round(allUseTime / dataSet.getDataNum(), 3), dataLength)
-    # plt.savefig(path + '.png')
+    # # plt.savefig(path + '.png')
     # np.save(path + '.npy', testErrors)
+
