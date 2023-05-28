@@ -7,7 +7,7 @@ import pylab as plt
 
 # 一般最低使用8000个数据点
 # 采样时间
-samplingTime = (64 + 64) / 9600
+samplingTime = (64 + 32) / 9600
 # 采样频率
 samplingRate = 9600 * 2
 
@@ -15,7 +15,7 @@ samplingRate = 9600 * 2
 SnrRange = [25, 25]
 
 # 数据保存根目录
-dataFileRoot = r"E:\资料\研究生\课题\射频定位\code\Dataset\test/SNR" + str(SnrRange)
+dataFileRoot = r"E:\资料\研究生\课题\射频定位\code\SignalDataset\SNR" + str(SnrRange)
 
 # 生成数据个数
 dataNum = 1000
@@ -166,20 +166,41 @@ for n in ['train', 'valid']:
         x = receiverPos[:, 0];#x = np.append(x, [emitterPos[0, 0]])
         y = receiverPos[:, 1];#y = np.append(y, [emitterPos[0, 1]])
         z = receiverPos[:, 2];#z = np.append(z, [emitterPos[0, 2]])
-        #ax = plt.subplot(projection='3d')  # 创建一个三维的绘图工程
-        ax = plt.subplot()
-        #ax.set_title('3d_image_show')  # 设置本图名称
-        #ax.scatter(x, y, z, c='y')   # 绘制数据点 c: 'r'红色，'y'黄色，等颜色
-        ax.scatter(x, y, c='black', marker='1', s=300, label_path='receiver')
-        ax.set_xlabel('X/m')  # 设置x坐标轴
-        ax.set_ylabel('Y/m')  # 设置y坐标轴
-        #ax.set_zlabel('Z/m')  # 设置z坐标轴
-        plt.xlim(0, 1e6)
-        plt.ylim(0, 1e6)
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        ax.scatter(x, y, z, c='black', marker='1', s=300)  # 绘制数据点 c: 'r'红色，'y'黄色，等颜色
+        direction = receiverVel
+        ax.quiver(x, y, z,
+                  direction[:, 0], direction[:, 1], direction[:, 2],
+                  length=20, normalize=False, color='r')
+
+        ax.set_xlabel('x/m')
+        ax.set_ylabel('y/m')
+        ax.set_zlabel('z/m')
+        ax.set_xlim(0, 1e6)
+        ax.set_ylim(0, 1e6)
+        ax.set_zlim(0, 1e6)
         plt.grid(True)
-        plt.legend()
+        # plt.legend()
         plt.show()
         '''
+
+        # ax = plt.subplot(projection='3d')  # 创建一个三维的绘图工程
+        # #ax = plt.subplot()
+        # ax.set_title('')  # 设置本图名称
+        # ax.scatter(x, y, z, c='black', marker='1', s=300)   # 绘制数据点 c: 'r'红色，'y'黄色，等颜色
+        # #ax.scatter(x, y, c='black', marker='1', s=300, label='receiver')
+        # ax.set_xlabel('X/m')  # 设置x坐标轴
+        # ax.set_ylabel('Y/m')  # 设置y坐标轴
+        # ax.set_zlabel('Z/m')  # 设置z坐标轴
+        # ax.set_xlim(0, 1e6)
+        # ax.set_ylim(0, 1e6)
+        # ax.set_zlim(0, 1e6)
+        # plt.grid(True)
+        # # plt.legend()
+        # plt.show()
+
 
         # 信噪比
         Snrs = []
