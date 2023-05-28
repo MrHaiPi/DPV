@@ -5,6 +5,8 @@ import torch
 from torch import nn
 from scipy import signal
 
+from DataFunction.CoorTrans import LLA_to_XYZ
+
 
 def IndexShuffle(data1, data2):
     indexNum = data1.shape[0]
@@ -56,7 +58,8 @@ def STFT(data, lengthOfF, sampleTime):
 
 def PITloss(input, target, emitterNum, coordDim, isCoorTrans=False, device='cpu', training=True):
 
-    combResult = [(0, 1, 2)]#list(permutations(np.arange(emitterNum), emitterNum))
+    combResult = [(0, 1, 2)] # SITloss, sort operation is done in DataSet function
+    #combResult = list(permutations(np.arange(emitterNum), emitterNum)) # PITloss
 
     if training:
         reg_loss = nn.MSELoss(reduction='none')
