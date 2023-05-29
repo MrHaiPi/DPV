@@ -186,22 +186,6 @@ for n in ['train', 'valid']:
         plt.show()
         '''
 
-        # ax = plt.subplot(projection='3d')  # 创建一个三维的绘图工程
-        # #ax = plt.subplot()
-        # ax.set_title('')  # 设置本图名称
-        # ax.scatter(x, y, z, c='black', marker='1', s=300)   # 绘制数据点 c: 'r'红色，'y'黄色，等颜色
-        # #ax.scatter(x, y, c='black', marker='1', s=300, label='receiver')
-        # ax.set_xlabel('X/m')  # 设置x坐标轴
-        # ax.set_ylabel('Y/m')  # 设置y坐标轴
-        # ax.set_zlabel('Z/m')  # 设置z坐标轴
-        # ax.set_xlim(0, 1e6)
-        # ax.set_ylim(0, 1e6)
-        # ax.set_zlim(0, 1e6)
-        # plt.grid(True)
-        # # plt.legend()
-        # plt.show()
-
-
         # 信噪比
         Snrs = []
         for num in range(emitterNum):
