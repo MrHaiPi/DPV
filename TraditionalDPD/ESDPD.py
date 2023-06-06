@@ -13,23 +13,23 @@ from TraditionalDPD.CRLB import CRLB
 
 if __name__ == "__main__":
     # 用于确定数据文件位置
-    SnrRange = [-5, -5]
-    dataFileRoot = r"E:\资料\研究生\课题\射频定位\code\SignalDataset\SNR" + str(SnrRange)
+    SnrRange = [25, 25]
+    dataFileRoot = r"E:/资料/研究生/课题/射频定位/code/Dataset/test/SNR" + str(SnrRange)
 
     errorUnit = '1e6m'
-    dataLength = 128
+    dataLength = 192
 
     # 接收机个数
-    receiverNum = 3
+    receiverNum = 4
     # 发射机个数
-    emitterNum = 1
+    emitterNum = 3
 
     dataSet = DataSetCsv1(root_path=dataFileRoot + "/valid", receiverNum=receiverNum,
                           emitterNum=emitterNum, transform=None,
                           time_fre_trans=None, fre_scale=None, time_scale=dataLength, isNormal=False)
 
     # 用于定位的接收机编号:0,1,2,...
-    locationReceiverNum = [0, 1, 2]
+    locationReceiverNum = [0, 1, 2, 3]
 
     # 计算精度
     delta = 10000/2
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     CRLBs = []
     useTime = 0
     allUseTime = 0
-    for num in range(dataSet.getDataNum() // 5):
+    for num in range(dataSet.getDataNum()):
 
         data, label = dataSet.getData(num, True)
         data1, data2 = data[0], data[1]
@@ -98,8 +98,8 @@ if __name__ == "__main__":
         #         p = np.zeros([1, 3])
         #         p[0, 0] = center[0] + i * delta - calRange
         #         p[0, 1] = center[1] + j * delta - calRange
-        #         loss[j, i] = MLDPD(fc, samplingRate, p, emitterVel[0], receiverPos[locationReceiverNum],
-        #                              receiverVel[locationReceiverNum], receiveSignal[locationReceiverNum])
+        #         loss[j, i] = MLDPD(fc, samplingRate, p, emitterVel[0], receiverPos,
+        #                              receiverVel, receiveSignal)
 
 
         # 计算范围m
@@ -111,8 +111,8 @@ if __name__ == "__main__":
                 p = np.zeros([1, 3])
                 p[0, 0] = i * delta
                 p[0, 1] = j * delta
-                loss[j, i] = MLDPD(fc, samplingRate, p, emitterVel[0], receiverPos[locationReceiverNum],
-                                   receiverVel[locationReceiverNum], receivedSignal[locationReceiverNum], emitterSignal=None)
+                loss[j, i] = MLDPD(fc, samplingRate, p, emitterVel[0], receiverPos,
+                                   receiverVel, receivedSignal, emitterSignal=None)
 
         crlb = CRLB(emitterPos, emitterVel, emitterSignal, receiverPos, receiverVel, receivedSignal,
                     SnrRange[0], fc, samplingRate, np.ones(receiverPos.shape[0]))
@@ -288,15 +288,15 @@ if __name__ == "__main__":
                     ax.scatter(emitterPos[i, 0], emitterPos[i, 1], np.max(loss), s=100, marker='*', c='black', alpha=1,
                                label='real' if i == 0 else None)
 
+                # 卫星位置绘制
+                x = receiverPos[:, 0]
+                y = receiverPos[:, 1]
+                z = np.ones([receiverPos.shape[1], 1]) * np.max(loss)
+                ax.scatter(x, y, z, marker='1', s=300, c='black')
+
             plt.xlabel('x/1e6m')
             plt.ylabel('y/1e6m')
             #plt.title('emitterPos:{}\npredict:{}\nerror:{}'.format(emitterPos, predict, error))
-
-            # 卫星位置绘制
-            # x = receiverPos[locationReceiverNum, 0]
-            # y = receiverPos[locationReceiverNum, 1]
-            # z = np.ones([locationReceiverNum.__len__(), 1]) * np.max(loss)
-            # ax.scatter(x, y, z, marker='1', s=300, c='black')
 
             plt.legend(loc='lower left')
             plt.show()
