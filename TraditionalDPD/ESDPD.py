@@ -28,9 +28,6 @@ if __name__ == "__main__":
                           emitterNum=emitterNum, transform=None,
                           time_fre_trans=None, fre_scale=None, time_scale=dataLength, isNormal=False)
 
-    # 用于定位的接收机编号:0,1,2,...
-    locationReceiverNum = [0, 1, 2, 3]
-
     # 计算精度
     delta = 10000/2
     delta *= 2
