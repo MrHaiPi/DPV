@@ -122,9 +122,9 @@ def PITloss(input, target, emitterNum, coordDim, isCoorTrans=False, device='cpu'
         input_x = input[:, 0::(2 + 1)]
         input_y = input[:, 1::(2 + 1)]
 
-        coordLoss = torch.ones(target_confidence.shape[0]) * 100
-        confLoss = torch.ones(target_confidence.shape[0]) * 100
-        loss = torch.ones(target_confidence.shape[0]) * 100
+        coordLoss = torch.ones(target_confidence.shape[0]) * torch.inf
+        confLoss = torch.ones(target_confidence.shape[0]) * torch.inf
+        loss = torch.ones(target_confidence.shape[0]) * torch.inf
         for i in range(input_x.shape[0]):
             best_comb = None
             for com in combResult:
@@ -158,6 +158,9 @@ def PITloss(input, target, emitterNum, coordDim, isCoorTrans=False, device='cpu'
         loss = torch.mean(loss)
         coordLoss = torch.mean(coordLoss)
         confLoss = torch.mean(confLoss)
+
+        if coordLoss > 3:
+            a=0
 
         return coordLoss, coordLoss, confLoss, (tp, fp, tn, fn)
 
