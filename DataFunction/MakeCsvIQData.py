@@ -4,7 +4,7 @@ from ReceSignalSim import ReceSignalSim, ReceSignalSim1
 import numpy as np
 import DataIO
 import pylab as plt
-
+np.random.seed(1)
 # 一般最低使用8000个数据点
 # 采样时间
 samplingTime = (64 + 32) / 9600
@@ -15,7 +15,7 @@ samplingRate = 9600 * 2
 SnrRange = [25, 25]
 
 # 数据保存根目录
-dataFileRoot = r"E:\资料\研究生\课题\射频定位\code\SignalDataset\SNR" + str(SnrRange)
+dataFileRoot = r"E:\资料\研究生\课题\射频定位\code\Dataset\SignalDataset\SNR" + str(SnrRange)
 
 # 生成数据个数
 dataNum = 1000
@@ -24,9 +24,9 @@ dataNum = 1000
 validRate = 1
 
 # 接收机数量范围
-receiverNumRange = [3, 4]
+receiverNumRange = [3, 3]
 # 发射机数量范围
-emitterNumRange = [1, 3]
+emitterNumRange = [1, 1]
 
 # 卫星位置范围，单位m
 receiverPosRange = 1e6 * np.array([[0, 1], [0, 1], [0.6, 1]])
@@ -45,6 +45,14 @@ emitterVelRange = [0, 30]
 
 # 信号衰减系数范围
 attenRange = [0.5, 1]
+
+# 接收机不同步造成的误差
+# 时间不同步的标准差/s
+sigma_t = 0#1e-5
+# 频率不同步的标准差/Hz
+sigma_f = 0
+# 不同步的参数
+asynchrony_par_sigma = [sigma_t, sigma_f]
 
 # 保存信号数据的标签
 signalLabelsHeaders = ['num', 'receiverNum', 'emitterNum']
@@ -194,7 +202,7 @@ for n in ['train', 'valid']:
         # 生成模拟信号
         emitSignals, receSignal, deltaTs, deltaFs, fcs = ReceSignalSim(samplingTime, samplingRate, emitterPos, emitterVel,
                                                                         receiverPos,
-                                                                        receiverVel, Snrs, attenRange)
+                                                                        receiverVel, Snrs, attenRange, asynchrony_par_sigma)
         # 绘制信号的时频图
         isPlot = False
         if isPlot:
