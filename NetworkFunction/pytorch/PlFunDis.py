@@ -45,8 +45,7 @@ def STFT(data, lengthOfF, sampleTime):
     for i in range(data.shape[0]):
         IQ = data[i]
 
-        f, t, Zxx = signal.stft(x=IQ, fs=IQ.__len__() / sampleTime,
-                                nperseg=lengthOfF, noverlap=lengthOfF-1, return_onesided=False)
+        f, t, Zxx = signal.stft(x=IQ, fs=IQ.__len__() / sampleTime, nperseg=lengthOfF, noverlap=lengthOfF-1, return_onesided=False)
 
         if Zxx.shape[1] > result.shape[2]:
             result[i] = abs(Zxx[:, :result.shape[2]])
@@ -56,7 +55,7 @@ def STFT(data, lengthOfF, sampleTime):
     return result
 
 
-def PITloss(input, target, emitterNum, coordDim, isCoorTrans=False, device='cpu', training=True):
+def SITloss(input, target, emitterNum, coordDim, isCoorTrans=False, device='cpu', training=True):
 
     combResult = [(0, 1, 2)] # SITloss, sort operation is done in DataSet function
     #combResult = list(permutations(np.arange(emitterNum), emitterNum)) # PITloss
@@ -158,9 +157,6 @@ def PITloss(input, target, emitterNum, coordDim, isCoorTrans=False, device='cpu'
         loss = torch.mean(loss)
         coordLoss = torch.mean(coordLoss)
         confLoss = torch.mean(confLoss)
-
-        if coordLoss > 3:
-            a=0
 
         return coordLoss, coordLoss, confLoss, (tp, fp, tn, fn)
 
