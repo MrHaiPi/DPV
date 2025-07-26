@@ -3,6 +3,8 @@ import sys
 import ptflops
 from torchsummary import summary
 
+from DataFunction import DataIO
+
 sys.path.insert(0, '/home/hw/xiarui/code1/DeepPL')
 import json
 import warnings
@@ -36,7 +38,7 @@ from fvcore.nn import FlopCountAnalysis
 from tqdm import tqdm
 from NetworkFunction.pytorch import eit_model, cnndpd, alexnet, vggnet, resnet, regnet
 import utils
-from NetworkFunction.pytorch.PlFunDis import PlModel, PITloss, STFT
+from NetworkFunction.pytorch.PlFunDis import PlModel, SITloss, STFT
 
 from DataFunction.DataSetPytorchDis import MyDataSetCsv1 # 该数据集的label为XYZ坐标
 
@@ -64,7 +66,7 @@ parser.add_argument('-b', '--batch-size', default=2, type=int, #64
 parser.add_argument('--unscale-lr', default=True, action='store_true')
 
 # Model parameters
-parser.add_argument('--model', default='alexnet', type=str, metavar='MODEL',
+parser.add_argument('--model', default='ResNet', type=str, metavar='MODEL',
                     help='Name of model to train')
 parser.add_argument('--model-ema', action='store_true')
 parser.add_argument('--no-model-ema', action='store_false', dest='model_ema')
@@ -114,12 +116,13 @@ parser.add_argument('--decay-rate', '--dr', type=float, default=0.1, metavar='RA
                     help='LR decay rate (default: 0.1)')
 
 # Dataset parameters
-data_root = r"E:\资料\研究生\课题\射频定位\code\Dataset\test\SNR[25, 25]" # get data root path
+snr_range = [25, 25]
+data_root = r"K:\dataset\SNR" + str(snr_range) # get data root path
 parser.add_argument('--data', metavar='DIR', default=data_root,
                     help='path to dataset')
 parser.add_argument('--print-freq', '-p', default=20, type=int,
                     metavar='N', help='print frequency (default: 10)')
-resume_path = os.path.join('logs', '25db/20230116-174219(alexnet_64_192_25db)')
+resume_path = os.path.join('logs', '5db/20240313-214016(resnet101_64_192_5db_sort_64_9_2dis)')
 parser.add_argument('--resume', default=resume_path, type=str, metavar='PATH',
                     help='path to latest checkpoint (default: none)')
 parser.add_argument('-e', '--evaluate', default=True, dest='evaluate', action='store_true',
@@ -131,7 +134,7 @@ parser.add_argument('--pretrained', dest='pretrained', action='store_true',
 log_dir = "./logs/" + datetime.now().strftime("%Y%m%d-%H%M%S") + '(' + notes + ')'
 parser.add_argument('--output_dir', default=log_dir,
                         help='path where to save, empty for no saving')
-parser.add_argument('--device', default='cpu',
+parser.add_argument('--device', default='cuda',
                     help='device to use for training / testing')
 parser.add_argument('--seed', default=0, type=int)
 parser.add_argument('--start_epoch', default=0, type=int, metavar='N',
@@ -197,12 +200,12 @@ def main():
         model = models.__dict__[args.model](pretrained=True)
     else:
         print("=> creating model '{}'".format(args.model))
-        if 'eit' in args.model:
+        if 'EIT' in args.model:
             model = eit_model.eit_tiny(img_size=(args.input1[0], args.input1[1]),
                                        in_c=args.input1[2],
                                        num_classes=args.fc_par_num,
                                        has_logits=False)
-        elif 'vit' in args.model:
+        elif 'ViT' in args.model:
             model = eit_model.vit_base(img_size=(args.input1[0], args.input1[1]),
                                        in_c=args.input1[2],
                                        num_classes=args.fc_par_num,
@@ -210,15 +213,15 @@ def main():
                                        use_eit_t=False,
                                        use_pos_em=True,
                                        has_logits=False)
-        elif 'cnndpd' in args.model:
+        elif 'CNNDPD' in args.model:
             model = cnndpd.CNNDPD(in_c=args.input1[2], num_classes=args.fc_par_num)
-        elif 'alexnet' in args.model:
+        elif 'AlexNet' in args.model:
             model = alexnet.AlexNet(in_c=args.input1[2], num_classes=args.fc_par_num)
-        elif 'vggnet' in args.model:
+        elif 'VggNet' in args.model:
             model = vggnet.vgg(in_c=args.input1[2], num_classes=args.fc_par_num, model_name='vgg11')
-        elif 'resnet' in args.model:
+        elif 'ResNet' in args.model:
             model = resnet.resnet101(in_c=args.input1[2], num_classes=args.fc_par_num)
-        elif 'regnet' in args.model:
+        elif 'RegNet' in args.model:
             model = regnet.create_regnet(in_c=args.input1[2], num_classes=args.fc_par_num, model_name='regnety_6.4gf')
 
     # create passive positioning model
@@ -267,7 +270,7 @@ def main():
     lr_scheduler, _ = create_scheduler(args, optimizer)
 
     # define loss function (criterion)
-    criterion = PITloss
+    criterion = SITloss
 
     # Optionally resume from a checkpoint
     if args.resume:
@@ -574,19 +577,25 @@ def validate(val_loader, model, criterion, device, epoch=0):
     print('average time:', batch_time.avg)
     errorUnit = '1e6m'
     testErrors = np.array(testErrors)
+    print('Average RMSE({}):{}'.format(errorUnit, testErrors.mean()))
+
     colors1 = '#00CED1'  # 点的颜色
     area = np.pi * 4 ** 2  # 点面积
     plt.figure(figsize=(4/1.25, 3/1.25))
     plt.scatter(range(testErrors.shape[0]), testErrors, s=area, c=colors1, alpha=0.4)
-    print('Average RMSE({}):{}'.format(errorUnit, testErrors.mean()))
     #plt.title('Average RMSE({}):{}'.format(errorUnit, testErrors.mean()))
-    plt.ylim([1e-4, 1.5])
+    #plt.ylim([1e-4, 1.5])
     plt.xlabel('sample number')
     plt.ylabel('RMSE/{}'.format(errorUnit))
     plt.yscale('log')
     plt.grid(axis='y', ls='--')
     plt.gca().yaxis.grid(True, which='minor', ls='--')  # minor grid on too
     plt.show()
+
+    # path = r"E:\资料\研究生\课题\射频定位\code\DeepPL\MultiEmitters\DPV\logs\TestResult" + "/" + "SNR" + str(snr_range)
+    # DataIO.MakeDir(path)
+    # path = path + '/' + 'DPV(+{}) Average RMSE({})({})'.format(args.model, testErrors.mean(), errorUnit)
+    # np.save(path + '.npy', testErrors)
 
     return losses.avg, cd_losses.avg, cf_losses.avg, (p, r, f1)
 

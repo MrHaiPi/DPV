@@ -1,5 +1,5 @@
 import os
-
+import pandas as pd
 import numpy as np
 import DataIO
 
@@ -23,8 +23,18 @@ for n in ['train', 'valid']:
     if not os.path.exists(dataPath + '/Csv/IQ/Information.csv'):
         continue
 
-    labels = np.array(DataIO.ReadCSV(dataPath + '/Csv/IQ/Information.csv')[1:])#不要表头
-    np.save(dataPath + '/Npy/IQ/Information.npy', labels)
+    # 加载csv
+    # labels = np.array(DataIO.ReadCSV(dataPath + '/Csv/IQ/Information.csv')[1:])#不要表头
+    # np.save(dataPath + '/Npy/IQ/Information.npy', labels)
+    chunk_size = 100000  # 根据内存调整块大小
+    chunks = []
+    reader = pd.read_csv(dataPath + '/Csv/IQ/Information.csv', chunksize=chunk_size)
+    for chunk in reader:
+        chunks.append(chunk.values)  # 转换为numpy数组
+    # 合并所有块
+    data = np.vstack(chunks)
+    # 保存为npy文件
+    np.save(dataPath + '/Npy/IQ/Information.npy', data)
 
     # 加载文件夹名称
     dirs = DataIO.GetDirName(dataPath + '/Csv/IQ')

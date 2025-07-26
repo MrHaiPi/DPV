@@ -9,12 +9,12 @@ import matplotlib.pyplot as plt
 import time
 import numpy as np
 from DPDFunction import MLDPD, MVDRDPD
-from TraditionalDPD.CRLB import CRLB
+from TraditionalDPD.CRLB import CRLB, CRLB1
 
 if __name__ == "__main__":
     # 用于确定数据文件位置
-    SnrRange = [25, 25]
-    dataFileRoot = r"E:/资料/研究生/课题/射频定位/code/Dataset/test/SNR" + str(SnrRange)
+    SnrRange = [-5, -5]
+    dataFileRoot = r"E:\资料\研究生\课题\射频定位\code\Dataset\test\SNR" + str(SnrRange)
 
     errorUnit = '1e6m'
     dataLength = 192
@@ -29,7 +29,8 @@ if __name__ == "__main__":
                           time_fre_trans=None, fre_scale=None, time_scale=dataLength, isNormal=False)
 
     # 计算精度
-    delta = 10000/2
+    delta = 10000 / 2
+    # delta = 10000 / 32
     delta *= 2
     testErrors = []
     CRLBs = []
@@ -86,21 +87,19 @@ if __name__ == "__main__":
         startTime = time.time()
 
         # 计算范围m
-
         # calRange = float(errorUnit[:-1])
         # loss = np.zeros([int(2 * calRange / delta + 1), int(2 * calRange / delta + 1)])
-        # center = np.mean(emitterPos, 0)
+        # center = np.mean(emitterPos[1].reshape([1, 3]), 0)
         # for i in range(loss.shape[1]):
         #     for j in range(loss.shape[0]):
         #         p = np.zeros([1, 3])
         #         p[0, 0] = center[0] + i * delta - calRange
         #         p[0, 1] = center[1] + j * delta - calRange
         #         loss[j, i] = MLDPD(fc, samplingRate, p, emitterVel[0], receiverPos,
-        #                              receiverVel, receiveSignal)
+        #                            receiverVel, receivedSignal, emitterSignal=None)
 
 
         # 计算范围m
-
         calRange = float(errorUnit[:-1])
         loss = np.zeros([int(calRange / delta + 1), int(calRange / delta + 1)])
         for i in range(loss.shape[1]):
@@ -111,8 +110,14 @@ if __name__ == "__main__":
                 loss[j, i] = MLDPD(fc, samplingRate, p, emitterVel[0], receiverPos,
                                    receiverVel, receivedSignal, emitterSignal=None)
 
-        crlb = CRLB(emitterPos, emitterVel, emitterSignal, receiverPos, receiverVel, receivedSignal,
-                    SnrRange[0], fc, samplingRate, np.ones(receiverPos.shape[0]))
+        crlb = CRLB1(emitterPos, emitterVel, emitterSignal, receiverPos, receiverVel, receivedSignal, SnrRange[0],
+                    fc, samplingRate, np.ones(receiverPos.shape[0], dtype=complex))
+        # crlb = []
+        # for i in range(len(emitterPos)):
+        #     crlb.append(CRLB(emitterPos[i].reshape([1, 3]), emitterVel[i].reshape([1, 3]), emitterSignal, receiverPos, receiverVel, receivedSignal, SnrRange[0],
+        #                 fc, samplingRate, np.ones(receiverPos.shape[0])))
+        # crlb = np.mean(crlb)
+
         CRLBs.append(crlb)
 
         # sample = np.zeros([loss.size, 3])
@@ -316,9 +321,8 @@ if __name__ == "__main__":
     plt.gca().yaxis.grid(True, which='minor', ls='--')  # minor grid on too
     plt.show()
 
-    # path = r"E:\资料\研究生\课题\射频定位\code\DeepPL\CompareExperRes" + "/" + errorUnit + '/SNR' + str(SnrRange)
+    # path = r"E:\资料\研究生\课题\射频定位\code\DeepPL\MultiEmitters\DPV\logs\TestResult" + "/" + "SNR" + str(SnrRange)
     # DataIO.MakeDir(path)
-    # path = path + '/' + '(time{})ESDPD average error({})'.format(round(allUseTime / dataSet.getDataNum(), 3), dataLength)
-    # # plt.savefig(path + '.png')
+    # path = path + '/' + 'ESDPD Average RMSE({})({})'.format(testErrors.mean(), errorUnit)
     # np.save(path + '.npy', testErrors)
 
