@@ -1,6 +1,6 @@
 import numpy as np
 
-
+# 单个发射机、两个坐标维度计算CRLB
 def CRLB(emitterPos, emitterVel, emitterSignal, receiverPos, receiverVel, receivedSignal, snr, fc, samplingRate, a):
     # 光速，单位m/s
     c = 299792458
@@ -61,7 +61,7 @@ def CRLB(emitterPos, emitterVel, emitterSignal, receiverPos, receiverVel, receiv
 
     return crlb
 
-
+# 多个发射机、多个坐标维度计算CRLB，更全面的版本，兼容上面的函数
 def CRLB1(emitterPos, emitterVel, emitterSignal, receiverPos, receiverVel, receivedSignal, snr, fc, samplingRate, a):
     # 光速，单位m/s
     c = 299792458
